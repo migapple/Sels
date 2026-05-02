@@ -1,0 +1,20 @@
+{
+  "appId": "com.michel.garlandat.selsdumonde",
+  "appName": "Sels du Monde",
+  "webDir": "App/public",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#070510",
+  "ios": {
+    "backgroundColor": "#070510",
+    "contentInset": "automatic",
+    "scrollEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>Sels du Monde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=IM+Fell+English:ital@0;1&display=swap"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --bg:#060608;
+  --bg2:#0d0d12;
+  --bg3:#15151e;
+  --gold:#c9a84c;
+  --gold2:#e8c97a;
+  --cream:#f0e6d0;
+  --text:#c8cdd8;
+  --muted:#7a8090;
+  --border:#1e1e2e;
+  --accent:#1a1a30;
+  --salt:#a8b4cc;
+  --salt2:#d0daf0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Cormorant Garamond',Georgia,serif;color:var(--text)}
+#app{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+
+.header{padding-top:calc(14px + env(safe-area-inset-top));background:var(--bg);flex-shrink:0;border-bottom:1px solid var(--border)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:0 16px 10px}
+.app-title{font-family:'IM Fell English',serif;font-size:21px;color:var(--gold2);letter-spacing:.04em}
+.lang-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:16px;cursor:pointer;color:var(--text)}
+
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:8px 12px;font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.03em}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+.main{flex:1;overflow-y:auto;padding-bottom:calc(12px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.hidden{display:none!important}
+
+.search-bar{padding:10px 16px 6px;background:var(--bg)}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--cream);font-family:inherit;font-size:15px;outline:none}
+.search-input::placeholder{color:var(--muted)}
+.chips{display:flex;gap:8px;padding:6px 16px 10px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.03em}
+.chip.active{background:var(--accent);border-color:var(--gold);color:var(--gold)}
+
+.cards{padding:0 12px}
+.card{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.card:active{border-color:var(--gold)}
+.salt-img-wrap{width:58px;height:58px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px}
+.salt-img-wrap img{width:100%;height:100%;object-fit:cover}
+.salt-img{width:58px;height:58px;object-fit:cover;border-radius:8px;}
+.salt-img.loading{opacity:0;}
+.card-info{flex:1;min-width:0}
+.card-name{font-family:'IM Fell English',serif;font-size:16px;color:var(--cream);margin-bottom:2px}
+.card-origin{font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.03em}
+.arome-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px}
+.arome-fill{height:100%;background:linear-gradient(90deg,#1a1a3a,#3a4a8a,#c9a84c);border-radius:2px}
+.card-badge{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* DETAIL */
+#detailView{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:9999;display:none;flex-direction:column;overflow:hidden}
+.detail-header{padding-top:calc(14px + env(safe-area-inset-top));background:var(--bg);flex-shrink:0;border-bottom:1px solid var(--border)}
+.detail-header-inner{display:flex;align-items:center;gap:10px;padding:0 16px 10px}
+.back-btn{background:none;border:none;color:var(--gold);font-size:20px;cursor:pointer;padding:4px 8px 4px 0}
+.detail-title{font-family:'IM Fell English',serif;color:var(--gold);font-size:19px;flex:1}
+.detail-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.detail-img-container{width:100%;height:210px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:80px}
+.detail-img-container img{width:100%;height:100%;object-fit:cover}
+.detail-content{padding:16px}
+.detail-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--muted)}
+.meta-tag span{color:var(--gold)}
+.detail-section{margin-bottom:16px}
+.detail-section h3{font-family:'IM Fell English',serif;color:var(--gold2);font-size:15px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.detail-section p{font-size:14px;line-height:1.7;color:var(--text)}
+.profil-box{background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:16px}
+.profil-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.profil-label{font-size:12px;color:var(--muted);width:90px;flex-shrink:0}
+.profil-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.profil-fill{height:100%;border-radius:3px}
+.fill-salinite{background:linear-gradient(90deg,#1a1a3a,#3a3a8a,#c9a84c)}
+.fill-arome{background:linear-gradient(90deg,#2a1a3a,#5a3a8a,#c97ae8)}
+.fill-textures{background:linear-gradient(90deg,#1a3a2a,#3a8a5a,#7ae8c9)}
+.fill-purete{background:linear-gradient(90deg,#1a2a3a,#3a6a8a,#7ac9e8)}
+.fill-rarete{background:linear-gradient(90deg,#3a2a00,#8a6a00,#e8c97a)}
+.profil-value{font-size:12px;color:var(--gold);width:30px;text-align:right}
+
+.rank-list{padding:12px}
+.rank-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer}
+.rank-num{width:28px;text-align:center;font-family:'IM Fell English',serif;color:var(--muted);font-size:18px;flex-shrink:0}
+.rank-num.top3{color:var(--gold);font-size:20px}
+.rank-emoji{font-size:22px;flex-shrink:0}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-family:'IM Fell English',serif;color:var(--cream);font-size:15px}
+.rank-region{font-size:11px;color:var(--muted)}
+.rank-bar-wrap{width:90px;flex-shrink:0}
+.rank-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.rank-fill{height:100%;background:linear-gradient(90deg,#1a1a4a,#c9a84c);border-radius:3px}
+.rank-score{font-size:11px;color:var(--gold);text-align:right}
+
+#mapView{display:flex;flex-direction:column;flex:1;overflow:hidden}
+#mapContainer{flex:1;min-height:0}
+#map{width:100%;height:100%}
+.leaflet-popup-content-wrapper{background:var(--bg2)!important;border:1px solid var(--gold)!important;border-radius:8px!important;color:var(--cream)!important}
+.leaflet-popup-tip{background:var(--bg2)!important}
+.popup-name{font-family:'IM Fell English',serif;font-size:14px;color:var(--gold);margin-bottom:4px}
+.popup-btn{background:var(--accent);border:1px solid var(--gold);border-radius:4px;color:var(--gold);padding:4px 10px;font-size:12px;margin-top:6px;cursor:pointer;font-family:inherit;display:block;width:100%;text-align:center}
+
+.recette-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin:0 12px 10px;cursor:pointer;transition:border-color .2s}
+.recette-card:active{border-color:var(--gold)}
+.recette-card-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.recette-emoji{font-size:28px}
+.recette-title{font-family:'IM Fell English',serif;font-size:17px;color:var(--cream)}
+.recette-origin{font-size:12px;color:var(--muted)}
+.recette-meta{display:flex;gap:12px;font-size:11px;color:var(--muted)}
+.recette-meta span{color:var(--gold)}
+
+#recetteDetail{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:9999;display:none;flex-direction:column;overflow:hidden}
+.recette-detail-header{padding-top:calc(14px + env(safe-area-inset-top));background:var(--bg);flex-shrink:0;border-bottom:1px solid var(--border)}
+.recette-detail-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.recette-section{margin-bottom:20px}
+.recette-section h3{font-family:'IM Fell English',serif;color:var(--gold2);font-size:16px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.ingredient-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.ingredient-item::before{content:'•';color:var(--gold);flex-shrink:0}
+.step-item{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.step-num{width:22px;height:22px;background:var(--accent);border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);flex-shrink:0;margin-top:2px}
+.step-text{font-size:14px;color:var(--text);line-height:1.6;flex:1}
+.conseil-box{background:var(--bg3);border-left:3px solid var(--gold);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);font-style:italic}
+
+.quiz-container{padding:16px}
+.quiz-score-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;text-align:center}
+.quiz-score-num{font-family:'IM Fell English',serif;font-size:36px;color:var(--gold)}
+.quiz-score-label{font-size:12px;color:var(--muted)}
+.quiz-question{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.quiz-q-text{font-family:'IM Fell English',serif;font-size:17px;color:var(--cream);margin-bottom:14px;line-height:1.5}
+.quiz-answers{display:flex;flex-direction:column;gap:8px}
+.quiz-answer{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px;color:var(--text);cursor:pointer;text-align:left;font-family:inherit;transition:all .2s}
+.quiz-answer.correct{background:#1a3a1f;border-color:#4a7c59;color:#8abf9a}
+.quiz-answer.wrong{background:#3a1a1a;border-color:#7c4a4a;color:#bf8a8a}
+.quiz-answer.revealed{pointer-events:none}
+.quiz-next{width:100%;background:var(--accent);border:1px solid var(--gold);border-radius:8px;padding:12px;font-family:'IM Fell English',serif;font-size:16px;color:var(--gold);cursor:pointer;margin-top:8px;display:none}
+.quiz-reset{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:inherit;font-size:14px;color:var(--muted);cursor:pointer;margin-top:8px}
+
+.histoire-container{padding:12px}
+.histoire-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.histoire-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.histoire-emoji{font-size:26px;flex-shrink:0}
+.histoire-period{font-family:'IM Fell English',serif;font-size:15px;color:var(--gold2)}
+.histoire-era{font-size:11px;color:var(--muted)}
+.histoire-text{font-size:13px;line-height:1.7;color:var(--text)}
+
+.apps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px}
+.app-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.app-icon{width:58px;height:58px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px}
+.app-icon img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.app-name{font-size:10px;color:var(--muted);text-align:center;line-height:1.3}
+.apps-section-title{font-family:'IM Fell English',serif;color:var(--gold);font-size:16px;padding:12px 16px 4px;border-bottom:1px solid var(--border);margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div class="header-inner">
+      <div class="app-title" id="appTitleEl">🧂 Sels du Monde</div>
+      <button class="lang-btn" onclick="toggleLang()">🇬🇧</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('list',this)">  🧂 </button>
+      <button class="tab" onclick="switchTab('rank',this)">  🏆 </button>
+      <button class="tab" onclick="switchTab('map',this)">  🗺️  </button>
+      <button class="tab" onclick="switchTab('recettes',this)">  🍽️  </button>
+      <button class="tab" onclick="switchTab('histoire',this)">  📜  </button>
+      <button class="tab" onclick="switchTab('quiz',this)">  ❓  </button>
+      <button class="tab" onclick="switchTab('apps',this)">  📱  </button>
+    </div>
+  </div>
+
+  <div id="listView" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="search-bar">
+      <input class="search-input" id="searchInput" placeholder="Rechercher un sel..." oninput="filterCards()"/>
+    </div>
+    <div class="chips" id="chipsContainer"></div>
+    <div class="main" id="cardsContainer"></div>
+  </div>
+
+  <div id="rankView" class="main hidden">
+    <div class="rank-list" id="rankList"></div>
+  </div>
+
+  <div id="mapView" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div id="mapContainer" style="flex:1;min-height:0">
+      <div id="map" style="width:100%;height:100%"></div>
+    </div>
+  </div>
+
+  <div id="recettesView" class="main hidden">
+    <div id="recettesList"></div>
+  </div>
+
+  <div id="histoireView" class="main hidden">
+    <div class="histoire-container" id="histoireContainer"></div>
+  </div>
+
+  <div id="quizView" class="main hidden">
+    <div class="quiz-container" id="quizContainer"></div>
+  </div>
+
+  <div id="appsView" class="main hidden">
+    <div id="appsList"></div>
+  </div>
+
+  <div id="detailView">
+    <div class="detail-header">
+      <div class="detail-header-inner">
+        <button class="back-btn" onclick="closeDetail()">←</button>
+        <div class="detail-title" id="detailTitle"></div>
+      </div>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+
+  <div id="recetteDetail">
+    <div class="recette-detail-header">
+      <div class="detail-header-inner">
+        <button class="back-btn" onclick="closeRecette()">←</button>
+        <div class="detail-title" id="recetteTitleEl"></div>
+      </div>
+    </div>
+    <div class="recette-detail-body" id="recetteBody"></div>
+  </div>
+
+</div>
+<script>
+// ===================== DONNÉES =====================
+const SELS = [
+  {id:1,e:'🌸',fr:{n:'Fleur de Sel de Guérande',o:'France (Loire-Atlantique)',d:'La fleur de sel de Guérande est la reine des sels français. Récoltée à la main par les paludiers dans les marais salants de Guérande depuis le IXe siècle, cette fine pellicule cristalline se forme à la surface des œillets par évaporation solaire et vents doux. Sa texture fondante et croquante à la fois, ses arômes iodés et floraux subtils en font le sel de finition par excellence. Label Rouge et IGP depuis 2012.'},en:{n:'Fleur de Sel de Guérande',o:'France (Loire-Atlantique)',d:'Fleur de sel de Guérande is the queen of French salts. Hand-harvested by paludiers in the salt marshes of Guérande since the 9th century, this fine crystalline film forms on the surface of salt pans through solar evaporation and gentle winds. Its simultaneously melt-and-crunch texture and subtle iodized, floral aromas make it the ultimate finishing salt. Red Label and PGI since 2012.'},region:'Europe',wiki:'Fleur de sel',wt:'',salinite:78,arome:92,texture:95,purete:85,rarete:80,couleur:'Blanc',lat:47.3,lng:-2.4},
+  {id:2,e:'🩷',fr:{n:'Sel Rose de l\'Himalaya',o:'Pakistan (Punjab)',d:'Le sel rose de l\'Himalaya est extrait des mines de Khewra au Pakistan, les deuxièmes plus grandes mines de sel du monde. Ce sel marin fossile a été déposé il y a 250 millions d\'années lors du retrait d\'une mer ancienne. Sa couleur rose caractéristique provient de traces de fer. Dépourvu de toute pollution moderne, il contient 84 oligoéléments naturels. Son goût est doux, minéral et légèrement terreux. Très en vogue dans la cuisine contemporaine.'},en:{n:'Himalayan Pink Salt',o:'Pakistan (Punjab)',d:'Himalayan pink salt is mined from the Khewra mines in Pakistan, the world\'s second largest salt mines. This fossil sea salt was deposited 250 million years ago during the retreat of an ancient sea. Its characteristic pink color comes from traces of iron. Free from all modern pollution, it contains 84 natural trace elements. Its taste is mild, mineral and slightly earthy. Very popular in contemporary cuisine.'},region:'Asie',wiki:'Himalayan salt',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/2015-03-07_Pakistanisches%2C_sogenanntes_Himalaya-Salz_0399.jpg/1920px-2015-03-07_Pakistanisches%2C_sogenanntes_Himalaya-Salz_0399.jpg',salinite:80,arome:70,texture:72,purete:95,rarete:30,couleur:'Rose',lat:32.6,lng:72.3},
+  {id:3,e:'⬛',fr:{n:'Sel Noir Hawaïen (Hiwa Kai)',o:'Hawaï (États-Unis)',d:'Le sel noir hawaïen Hiwa Kai est un sel marin de grande pureté coloré au charbon actif de noix de coco. Récolté dans les eaux cristallines de l\'Océan Pacifique hawaïen, il présente des cristaux grossiers d\'un noir profond spectaculaire. Son goût est fin, légèrement terreux avec des notes minérales profondes. Il est utilisé en finition pour son effet visuel saisissant sur les plats blancs (poisson cru, fromages, œufs). Le charbon actif est réputé pour ses propriétés détoxifiantes.'},en:{n:'Hawaiian Black Salt (Hiwa Kai)',o:'Hawaii (United States)',d:'Hiwa Kai Hawaiian black salt is a high-purity sea salt colored with activated coconut charcoal. Harvested from the crystal-clear waters of the Hawaiian Pacific Ocean, it features coarse crystals of spectacular deep black. Its taste is fine, slightly earthy with deep mineral notes. It is used as a finishing salt for its striking visual effect on white dishes (raw fish, cheeses, eggs). Activated charcoal is renowned for its detoxifying properties.'},region:'Amériques',wiki:'Hawaiian salt',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Black_Salt_%28crystals%29.jpg/500px-Black_Salt_%28crystals%29.jpg',salinite:82,arome:65,texture:80,purete:90,rarete:65,couleur:'Noir',lat:20.8,lng:-156.3},
+  {id:4,e:'🔴',fr:{n:'Sel Rouge Aléa d\'Hawaï',o:'Hawaï (États-Unis)',d:'Le sel rouge Aléa est l\'un des sels les plus anciens et sacrés d\'Hawaï. Traditionnellement utilisé par les Hawaïens natifs dans les cérémonies religieuses et pour la conservation des aliments, il tire sa couleur rouge brique de l\'argile volcanique Alaea riche en oxyde de fer. Cette argile volcanique lui confère un goût terreux unique, légèrement minéral, et des propriétés nutritionnelles exceptionnelles. Il s\'utilise sur les viandes grillées, le poisson cru et les légumes rôtis.'},en:{n:'Hawaiian Red Alaea Salt',o:'Hawaii (United States)',d:'Alaea red salt is one of the oldest and most sacred salts in Hawaii. Traditionally used by native Hawaiians in religious ceremonies and for food preservation, it draws its brick-red color from volcanic Alaea clay rich in iron oxide. This volcanic clay gives it a unique earthy, slightly mineral taste and exceptional nutritional properties. It is used on grilled meats, raw fish and roasted vegetables.'},region:'Amériques',wiki:'Alaea salt',wt:'',salinite:78,arome:72,texture:75,purete:80,rarete:70,couleur:'Rouge',lat:21.3,lng:-157.8},
+  {id:5,e:'🌿',fr:{n:'Sel Fumé de Maldon',o:'Angleterre (Essex)',d:'Le sel de Maldon est produit depuis le XIe siècle dans l\'estuaire de la Blackwater en Essex. Mentionné dans le Domesday Book de Guillaume le Conquérant en 1086, c\'est l\'un des sels les plus historiques d\'Europe. Sa version fumée est obtenue par fumage au bois de chêne, lui conférant des arômes boisés, toastés et légèrement caramélisés. Ses cristaux en forme de pyramide creuse (pyramidal flakes) sont uniques au monde. Texture fondante et légèreté exceptionnelle.'},en:{n:'Maldon Smoked Salt',o:'England (Essex)',d:'Maldon salt has been produced since the 11th century in the Blackwater estuary in Essex. Mentioned in William the Conqueror\'s Domesday Book in 1086, it is one of Europe\'s most historic salts. Its smoked version is obtained by smoking over oak wood, giving it woody, toasted, and slightly caramelized aromas. Its hollow pyramid-shaped crystals (pyramidal flakes) are unique in the world. Exceptional melting texture and lightness.'},region:'Europe',wiki:'Maldon salt',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Maldon_Sea_Salt_flakes.jpg/500px-Maldon_Sea_Salt_flakes.jpg',salinite:85,arome:90,texture:92,purete:88,rarete:55,couleur:'Fumé',lat:51.7,lng:0.7},
+  {id:6,e:'🩵',fr:{n:'Sel Bleu de Perse',o:'Iran (Semnan)',d:'Le sel bleu de Perse est l\'un des sels les plus rares et les plus onéreux du monde. Extrait de mines de sel millénaires dans la région de Semnan en Iran, sa couleur bleu-violet spectaculaire provient de la sylvite, un minéral de potassium. Produit en quantités infimes, il se vend parfois 100€ le kilo. Son goût est étonnamment doux en attaque, puis développe une légère acidité et une salinité persistante. Les cristaux sont à utiliser entiers en finition, leur couleur disparaissant une fois dissous.'},en:{n:'Persian Blue Salt',o:'Iran (Semnan)',d:'Persian blue salt is one of the rarest and most expensive salts in the world. Extracted from ancient salt mines in Iran\'s Semnan region, its spectacular blue-violet color comes from sylvite, a potassium mineral. Produced in tiny quantities, it sometimes sells for €100 per kilo. Its taste is surprisingly mild at first, then develops a slight acidity and persistent salinity. The crystals are best used whole as a finishing salt, as their color disappears once dissolved.'},region:'Asie',wiki:'Persian blue salt',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Sylvinite_%28halite-sylvite_evaporite_rock%29_%28Upper_Kama_Potash_Deposit%2C_Lower_Permian%3B_Solikamsk%2C_Russia%29_6.jpg/500px-Sylvinite_%28halite-sylvite_evaporite_rock%29_%28Upper_Kama_Potash_Deposit%2C_Lower_Permian%3B_Solikamsk%2C_Russia%29_6.jpg',salinite:75,arome:78,texture:85,purete:88,rarete:98,couleur:'Bleu',lat:35.6,lng:53.4},
+  {id:7,e:'⚪',fr:{n:'Sel Gris de Guérande',o:'France (Loire-Atlantique)',d:'Le sel gris de Guérande est le compagnon quotidien de la cuisine française. Récolté sous la fleur de sel au fond des bassins par les paludiers, il garde les argiles grises des marais qui lui donnent sa couleur caractéristique et enrichissent son profil en magnésium et oligoéléments. Plus fort et plus minéral que la fleur de sel, il est idéal pour la cuisson des viandes, des légumes et des pâtes. Son humidité naturelle en fait le sel de cuisson par excellence dans les cuisines françaises.'},en:{n:'Grey Salt of Guérande',o:'France (Loire-Atlantique)',d:'Guérande grey salt is the everyday companion of French cuisine. Harvested below the fleur de sel at the bottom of basins by paludiers, it retains the grey clays of the marshes that give it its characteristic color and enrich its profile with magnesium and trace elements. Stronger and more mineral than fleur de sel, it is ideal for cooking meats, vegetables and pasta. Its natural moisture makes it the ultimate cooking salt in French kitchens.'},region:'Europe',wiki:'Sel gris',wt:'',salinite:85,arome:80,texture:70,purete:78,rarete:20,couleur:'Gris',lat:47.3,lng:-2.4},
+  {id:8,e:'🌊',fr:{n:'Sel de Camargue',o:'France (Bouches-du-Rhône)',d:'Le sel de Camargue est produit dans le delta du Rhône depuis l\'Antiquité grecque. La Camargue, premier producteur de sel de France avec 400 000 tonnes par an, bénéficie d\'un ensoleillement exceptionnel et de vents forts (mistral). Son sel blanc brillant aux cristaux fins est parfait pour la cuisine quotidienne. Une partie de la production est commercialisée en fleur de sel. Le Salin-de-Giraud et les Salins du Midi gèrent les grandes salines industrielles. La faune flamants roses y est emblématique.'},en:{n:'Camargue Salt',o:'France (Bouches-du-Rhône)',d:'Camargue salt has been produced in the Rhône delta since ancient Greek times. The Camargue, France\'s leading salt producer with 400,000 tonnes per year, benefits from exceptional sunshine and strong winds (mistral). Its brilliant white salt with fine crystals is perfect for everyday cooking. Part of the production is marketed as fleur de sel. Salin-de-Giraud and Salins du Midi manage the large industrial saltworks. Pink flamingos are emblematic of its wildlife.'},region:'Europe',wiki:'Camargue',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/FleurDeSel.JPG/500px-FleurDeSel.JPG',salinite:87,arome:72,texture:68,purete:82,rarete:15,couleur:'Blanc',lat:43.5,lng:4.6},
+  {id:9,e:'🏔️',fr:{n:'Sel de Guerrero Negro',o:'Mexique (Basse-Californie)',d:'Guerrero Negro abrite les plus grandes salines du monde avec 33 000 hectares de bassins d\'évaporation sur la côte pacifique de Basse-Californie. Ce gigantesque complexe produit jusqu\'à 8 millions de tonnes de sel par an, soit environ 10% de la production mondiale. Le sel y est récolté mécaniquement et exporté vers les États-Unis, le Japon et le Mexique. La lagune adjacente (Ojo de Liebre) est une réserve de biosphère UNESCO où les baleines grises viennent mettre bas chaque hiver.'},en:{n:'Guerrero Negro Salt',o:'Mexico (Baja California)',d:'Guerrero Negro is home to the world\'s largest salt works with 33,000 hectares of evaporation ponds on the Pacific coast of Baja California. This gigantic complex produces up to 8 million tonnes of salt per year, about 10% of world production. The salt is harvested mechanically and exported to the United States, Japan and Mexico. The adjacent lagoon (Ojo de Liebre) is a UNESCO biosphere reserve where grey whales come to give birth each winter.'},region:'Amériques',wiki:'Guerrero Negro',wt:'',salinite:90,arome:55,texture:60,purete:85,rarete:10,couleur:'Blanc',lat:28.0,lng:-114.0},
+  {id:10,e:'🌸',fr:{n:'Fleur de Sel de l\'Île de Ré',o:'France (Charente-Maritime)',d:'La fleur de sel de l\'île de Ré bénéficie d\'une IGP depuis 2012 et jouit d\'une réputation de qualité exceptionnelle. Produite par une petite communauté de paludiers sur l\'île de Ré, au large de La Rochelle, elle est récoltée à la main dans les œillets charentais. La fleur de sel de Ré est reconnue pour ses cristaux particulièrement fins, sa blancheur et ses arômes subtils de violette. Elle est souvent comparée à la Guérande mais avec un caractère iodé plus prononcé dû à la proximité de l\'Atlantique.'},en:{n:'Fleur de Sel de l\'Île de Ré',o:'France (Charente-Maritime)',d:'Fleur de sel from the Île de Ré has held a PGI since 2012 and enjoys an exceptional reputation for quality. Produced by a small community of paludiers on the Île de Ré, off La Rochelle, it is hand-harvested from Charentais salt pans. Île de Ré fleur de sel is recognized for its particularly fine crystals, whiteness and subtle violet aromas. It is often compared to Guérande but with a more pronounced iodized character due to Atlantic proximity.'},region:'Europe',wiki:'Île de Ré',wt:'',salinite:76,arome:90,texture:94,purete:88,rarete:72,couleur:'Blanc',lat:46.2,lng:-1.4},
+  {id:11,e:'🩶',fr:{n:'Sel de Kala Namak (Sel Noir Indien)',o:'Inde / Pakistan',d:'Le Kala Namak (sel noir en hindi) est un sel volcanique halogéné originaire des plaines indo-gangétiques. Malgré son nom "noir", il se présente sous forme de poudre rose-violacée une fois broyé. Sa particularité unique est son fort goût et arôme de soufre, dû à la présence de sulfate de sodium, de sulfure de fer et d\'hydrogène sulfuré. Indispensable dans la cuisine indienne et pakistanaise (chaats, raitas, chutneys), il est aussi utilisé par les végétaliens pour reproduire le goût de l\'œuf.'},en:{n:'Kala Namak (Indian Black Salt)',o:'India / Pakistan',d:'Kala Namak (black salt in Hindi) is a volcanic halite salt originating from the Indo-Gangetic plains. Despite its name "black", it appears as a pink-violet powder once ground. Its unique characteristic is its strong sulfurous taste and aroma, due to sodium sulfate, iron sulfide and hydrogen sulfide. Essential in Indian and Pakistani cuisine (chaats, raitas, chutneys), it is also used by vegans to replicate the taste of egg.'},region:'Asie',wiki:'Kala namak',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Black_Salt_%28crystals%29.jpg/500px-Black_Salt_%28crystals%29.jpg',salinite:70,arome:88,texture:65,purete:72,rarete:45,couleur:'Noir',lat:25.0,lng:73.0},
+  {id:12,e:'⬜',fr:{n:'Sel de Trapani',o:'Italie (Sicile)',d:'Le sel de Trapani, produit dans les salines de la côte ouest de la Sicile, est l\'un des sels méditerranéens les plus réputés depuis l\'Antiquité phénicienne. Son extraction dans les lagunes de Marsala et Paceco remonte à plus de 2 500 ans. Les moulins à vent médiévaux encore en activité broient et transportent le sel récolté manuellement. Sa teneur en magnésium est plus élevée que les sels industriels. Goût doux, légèrement iodé, parfait pour les poissons, les pâtes et le pesto.'},en:{n:'Trapani Salt',o:'Italy (Sicily)',d:'Trapani salt, produced in the saltworks on the western coast of Sicily, is one of the most renowned Mediterranean salts since Phoenician antiquity. Its extraction from the lagoons of Marsala and Paceco dates back over 2,500 years. Medieval windmills still in operation grind and transport the manually harvested salt. Its magnesium content is higher than industrial salts. Mild, slightly iodized taste, perfect for fish, pasta and pesto.'},region:'Europe',wiki:'Sale di Trapani',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Mulino_a_Vento_Mamma_Caura_al_calar_del_sole.jpg/960px-Mulino_a_Vento_Mamma_Caura_al_calar_del_sole.jpg',salinite:83,arome:75,texture:78,purete:82,rarete:40,couleur:'Blanc',lat:37.9,lng:12.5},
+  {id:13,e:'🧊',fr:{n:'Sel de la Mer Morte',o:'Israël / Jordanie',d:'La mer Morte, lac salé aux confins d\'Israël et de la Jordanie, contient une concentration en sel 9 fois supérieure à celle des océans (34% vs 3,5%). Son sel est riche en chlorure de magnésium, de potassium et de calcium, avec un chlorure de sodium nettement inférieur aux sels communs (seulement 30%). Son goût est donc moins salé et plus amer-minéral. Très utilisé en cosmétique (sels de bain, soins de peau) et apprécié pour ses propriétés thérapeutiques. Cité dans la Bible comme lieu de purification.'},en:{n:'Dead Sea Salt',o:'Israel / Jordan',d:'The Dead Sea, a salt lake on the borders of Israel and Jordan, contains a salt concentration 9 times higher than the oceans (34% vs 3.5%). Its salt is rich in magnesium, potassium and calcium chloride, with significantly lower sodium chloride than common salts (only 30%). Its taste is therefore less salty and more bitter-mineral. Widely used in cosmetics (bath salts, skin care) and prized for its therapeutic properties. Cited in the Bible as a place of purification.'},region:'Asie',wiki:'Dead Sea',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Дно_Мёртвого_моря.jpg/500px-Дно_Мёртвого_моря.jpg',salinite:60,arome:65,texture:70,purete:70,rarete:35,couleur:'Blanc',lat:31.5,lng:35.5},
+  {id:14,e:'🏜️',fr:{n:'Sel du Lac Rose (Lac Retba)',o:'Sénégal (Dakar)',d:'Le lac Rose (Lac Retba), situé à 35 km de Dakar, doit sa couleur rose spectaculaire à une microalgue (Dunaliella salina) qui produit du bêta-carotène rouge pour absorber la lumière intense. Sa concentration en sel atteint 40% dans certaines zones, plus que la mer Morte. Les sauniers récoltent le sel à la main depuis leurs pirogues en endommageant leurs corps protégés au beurre de karité. Un kilo de sel récolté représente environ 3 heures de travail. Site classé patrimoine africain.'},en:{n:'Pink Lake Salt (Lac Retba)',o:'Senegal (Dakar)',d:'Pink Lake (Lac Retba), located 35 km from Dakar, owes its spectacular pink color to a microalgae (Dunaliella salina) that produces red beta-carotene to absorb intense light. Its salt concentration reaches 40% in some areas, more than the Dead Sea. Salt workers harvest the salt by hand from their canoes, protecting their bodies with shea butter. One kilo of harvested salt represents about 3 hours of work. Listed as an African heritage site.'},region:'Afrique',wiki:'Lake Retba',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/RetbaLakeShore.jpg/960px-RetbaLakeShore.jpg',salinite:92,arome:62,texture:68,purete:75,rarete:78,couleur:'Rose',lat:14.8,lng:-17.2},
+  {id:15,e:'🌋',fr:{n:'Sel de Salinas de Maras',o:'Pérou (Cuzco)',d:'Les salines de Maras, à 3 000 mètres d\'altitude dans la Vallée Sacrée des Incas près de Cuzco au Pérou, sont l\'un des sites de production de sel les plus spectaculaires du monde. Environ 3 000 bassins d\'évaporation en terrasses découpent la montagne comme un tableau cubiste. Ces salines sont exploitées depuis l\'époque Inca (XIIIe siècle) par les communautés locales. Le sel y est d\'une blancheur immaculée avec des notes minérales et une légère douceur dues à l\'altitude et à la pureté de l\'eau de source andine.'},en:{n:'Maras Salt Mines Salt',o:'Peru (Cuzco)',d:'The Maras salt pans, at 3,000 meters altitude in the Sacred Valley of the Incas near Cuzco, Peru, are one of the world\'s most spectacular salt production sites. About 3,000 terraced evaporation pools cut into the mountainside like a cubist tableau. These salt pans have been exploited since Inca times (13th century) by local communities. The salt is immaculately white with mineral notes and a slight sweetness due to altitude and the purity of Andean spring water.'},region:'Amériques',wiki:'Salineras de Maras',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Salineras_de_Maras.jpg/800px-Salineras_de_Maras.jpg',salinite:82,arome:78,texture:80,purete:90,rarete:82,couleur:'Blanc',lat:-13.3,lng:-72.1},
+  {id:16,e:'🌺',fr:{n:'Fleur de Sel de Noirmoutier',o:'France (Vendée)',d:'L\'île de Noirmoutier, surnommée l\'île de Lumière, produit une fleur de sel d\'exception dont la production remonte au Moyen Âge. Ses marais salants bénéficient d\'un microclimat favorable et d\'une tradition de paludiers depuis le XIe siècle. La fleur de sel de Noirmoutier se distingue par ses cristaux très fins et ses arômes délicats de violette et d\'huîtres. Elle est souvent conditionnée avec des algues séchées locales ou des herbes de l\'île. Très appréciée des chefs étoilés vendéens et ligériens.'},en:{n:'Fleur de Sel de Noirmoutier',o:'France (Vendée)',d:'The island of Noirmoutier, nicknamed the Island of Light, produces exceptional fleur de sel whose production dates back to the Middle Ages. Its salt marshes benefit from a favorable microclimate and a paludier tradition since the 11th century. Noirmoutier fleur de sel is distinguished by its very fine crystals and delicate aromas of violet and oysters. It is often packaged with local dried seaweed or island herbs. Highly prized by Vendée and Loire starred chefs.'},region:'Europe',wiki:'Noirmoutier',wt:'',salinite:76,arome:88,texture:93,purete:85,rarete:75,couleur:'Blanc',lat:47.0,lng:-2.2},
+  {id:17,e:'🍋',fr:{n:'Sel aux Agrumes de Chypre',o:'Chypre',d:'Les salines de Chypre produisent un sel marin de grande qualité depuis l\'Antiquité. L\'île était un carrefour commercial majeur de la Méditerranée orientale, et son sel était exporté vers toute l\'Égypte antique et la Grèce. Le sel chypriote contemporain aux agrumes (citron, orange, bergamote) est une création gastronomique moderne qui marie les cristaux pyramidaux légers à des zestes déshydratés d\'agrumes méditerranéens. Notes fraîches, légèrement acides et florales. Parfait en finition sur les poissons et les desserts.'},en:{n:'Cyprus Citrus Salt',o:'Cyprus',d:'Cyprus salt pans have produced high quality sea salt since antiquity. The island was a major commercial crossroads of the eastern Mediterranean, and its salt was exported throughout ancient Egypt and Greece. Contemporary Cypriot citrus salt (lemon, orange, bergamot) is a modern gastronomic creation that pairs light pyramidal crystals with dehydrated Mediterranean citrus zests. Fresh, slightly acidic and floral notes. Perfect as a finishing salt on fish and desserts.'},region:'Europe',wiki:'Akrotiri salt lake',wt:'',salinite:80,arome:85,texture:88,purete:82,rarete:55,couleur:'Aromatis.',lat:34.6,lng:33.0},
+  {id:18,e:'🌿',fr:{n:'Sel Vert au Basilic de Bretagne',o:'France (Finistère)',d:'Le sel vert au basilic est une création bretonne alliant le sel gris de Guérande à du basilic frais déshydraté. Développé par des artisans bretons dans les années 2000, ce sel aromatique représente une nouvelle génération de sels de finition. Le basilic breton cultivé en plein air développe des arômes intenses et légèrement anisés. La combinaison avec le sel gris humide et minéral donne une explosion aromatique unique. Idéal sur les tomates, la mozzarella, les pâtes fraîches et les viandes blanches.'},en:{n:'Green Basil Salt from Brittany',o:'France (Finistère)',d:'Green basil salt is a Breton creation combining grey Guérande salt with dehydrated fresh basil. Developed by Breton artisans in the 2000s, this aromatic salt represents a new generation of finishing salts. Open-air grown Breton basil develops intense, slightly anise aromas. The combination with moist, mineral grey salt gives a unique aromatic explosion. Ideal on tomatoes, mozzarella, fresh pasta and white meats.'},region:'Europe',wiki:'Finistère',wt:'',salinite:80,arome:88,texture:72,purete:80,rarete:45,couleur:'Aromatis.',lat:48.3,lng:-4.1},
+  {id:19,e:'🟤',fr:{n:'Fleur de Sel au Chocolat',o:'France / Belgique',d:'L\'association fleur de sel et chocolat noir est l\'une des grandes découvertes de la gastronomie contemporaine, popularisée par le chocolatier Pierre Hermé dans les années 1990. La fleur de sel amplifie les arômes du cacao, révèle son amertume naturelle et crée une explosion sensorielle. Ce sel aromatisé au cacao est utilisé comme finition sur les ganaches, les caramels, les tartes au chocolat et les mousses. Le contraste cristal croquant / fondant chocolaté est devenu un classique.'},en:{n:'Fleur de Sel with Chocolate',o:'France / Belgium',d:'The combination of fleur de sel and dark chocolate is one of the great discoveries of contemporary gastronomy, popularized by chocolatier Pierre Hermé in the 1990s. Fleur de sel amplifies cocoa aromas, reveals its natural bitterness and creates a sensory explosion. This cocoa-flavored salt is used as a finishing touch on ganaches, caramels, chocolate tarts and mousses. The crunchy crystal / melting chocolate contrast has become a classic.'},region:'Europe',wiki:'Fleur de sel',wt:'',salinite:78,arome:90,texture:90,purete:82,rarete:40,couleur:'Aromatis.',lat:48.8,lng:2.3},
+  {id:20,e:'🌊',fr:{n:'Sel de Maldon Nature',o:'Angleterre (Essex)',d:'Le sel de Maldon est produit depuis 1882 dans la même famille, les Osborne, à Maldon dans l\'Essex. Ses cristaux en pyramide creuse (flakes pyramidales) sont formés par évaporation lente dans des bassins peu profonds d\'eau de mer de l\'estuaire de la Blackwater. Cette forme unique donne au sel une légèreté et une texture croquante-fondante incomparables. Plébiscité par les plus grands chefs mondiaux (Gordon Ramsay, Heston Blumenthal), il est l\'étalon des sels de finition anglais.'},en:{n:'Maldon Sea Salt Flakes',o:'England (Essex)',d:'Maldon salt has been produced since 1882 by the same family, the Osbornes, in Maldon, Essex. Its hollow pyramid crystals (pyramidal flakes) are formed by slow evaporation in shallow seawater pools from the Blackwater estuary. This unique shape gives the salt unparalleled lightness and crunchy-melt texture. Championed by the world\'s greatest chefs (Gordon Ramsay, Heston Blumenthal), it is the benchmark for English finishing salts.'},region:'Europe',wiki:'Maldon salt',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Maldon_Sea_Salt_flakes.jpg/500px-Maldon_Sea_Salt_flakes.jpg',salinite:83,arome:80,texture:95,purete:90,rarete:35,couleur:'Blanc',lat:51.7,lng:0.7},
+  {id:21,e:'🏺',fr:{n:'Sel de Baleine (Sal de Cuyutlán)',o:'Mexique (Colima)',d:'Le sel de Cuyutlán sur la côte pacifique du Mexique, surnommé "sel de baleine" par les indigènes, est produit dans des salines artisanales depuis l\'époque précolombienne. Les Aztèques en faisaient commerce le long de leurs routes commerciales. Sa production est menacée par l\'industrialisation, ne subsistant que grâce à quelques familles artisanales. Sel marin brut, légèrement gris, avec des notes marines profondes et une salinité intense. Une tradition vivante reconnue par l\'UNESCO comme patrimoine immatériel.'},en:{n:'Whale Salt (Sal de Cuyutlán)',o:'Mexico (Colima)',d:'Cuyutlán salt on Mexico\'s Pacific coast, nicknamed "whale salt" by indigenous peoples, has been produced in artisanal salt pans since pre-Columbian times. The Aztecs traded it along their trade routes. Its production is threatened by industrialization, surviving only thanks to a few artisanal families. Raw sea salt, slightly grey, with deep marine notes and intense salinity. A living tradition recognized by UNESCO as intangible heritage.'},region:'Amériques',wiki:'Cuyutlán',wt:'',salinite:88,arome:72,texture:68,purete:76,rarete:85,couleur:'Gris',lat:18.9,lng:-103.9},
+  {id:22,e:'🔮',fr:{n:'Sel Bleu de Bolivie',o:'Bolivie (Salar d\'Uyuni)',d:'Le Salar d\'Uyuni en Bolivie est le plus grand désert de sel du monde avec 10 582 km². Ce lac salé asséché, à 3 656 mètres d\'altitude dans les Andes, contient 50 à 70% des réserves mondiales de lithium. Son sel est d\'une pureté et d\'une blancheur éblouissante. La teinte bleue irisée visible lors des reflets de ciel est à l\'origine du nom "sel bleu". Les habitants de Colchani récoltent artisanalement le sel depuis des siècles. Site touristique unique qui accueille 250 000 visiteurs par an.'},en:{n:'Bolivian Blue Salt (Uyuni)',o:'Bolivia (Salar de Uyuni)',d:'The Salar de Uyuni in Bolivia is the world\'s largest salt flat at 10,582 km². This dried salt lake, at 3,656 meters altitude in the Andes, contains 50 to 70% of global lithium reserves. Its salt is dazzlingly pure and white. The iridescent blue tint visible in sky reflections is the origin of the name "blue salt". The inhabitants of Colchani have been harvesting salt by hand for centuries. A unique tourist site attracting 250,000 visitors per year.'},region:'Amériques',wiki:'Salar de Uyuni',wt:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Salar_Uyuni_Bolivie.JPG/500px-Salar_Uyuni_Bolivie.JPG',salinite:85,arome:60,texture:72,purete:92,rarete:70,couleur:'Blanc',lat:-20.1,lng:-67.6},
+  {id:23,e:'🏖️',fr:{n:'Sel de Cervia (Sale Dolce di Cervia)',o:'Italie (Émilie-Romagne)',d:'Le sel doux de Cervia, surnommé "sale dolce" (sel doux), est produit dans les salines de la côte adriatique d\'Émilie-Romagne depuis le Moyen Âge. Sa douceur unique et sa faible amertume proviennent d\'une teneur en magnésium plus basse que les autres sels méditerranéens. Il était historiquement le sel des papes : la production de Cervia alimentait les cuisines papales de Ravenne. Sa richesse en bromures naturels lui confère des propriétés conservatrices. Parfait pour les charcuteries artisanales et les fromages italiens.'},en:{n:'Cervia Sweet Salt (Sale Dolce di Cervia)',o:'Italy (Emilia-Romagna)',d:'Cervia sweet salt, nicknamed "sale dolce" (sweet salt), has been produced in the saltworks on the Adriatic coast of Emilia-Romagna since the Middle Ages. Its unique sweetness and low bitterness come from lower magnesium content than other Mediterranean salts. It was historically the salt of popes: Cervia\'s production fed the papal kitchens of Ravenna. Its richness in natural bromides gives it preserving properties. Perfect for artisanal charcuterie and Italian cheeses.'},region:'Europe',wiki:'Cervia',wt:'',salinite:79,arome:78,texture:75,purete:84,rarete:65,couleur:'Blanc',lat:44.3,lng:12.3},
+  {id:24,e:'🌑',fr:{n:'Sel Noir Chypriote au Charbon',o:'Chypre',d:'Le sel noir de Chypre est un sel marin de grande pureté produit à partir des eaux cristallines de la Méditerranée orientale. Ses cristaux en pyramide creuse sont teintés au charbon actif végétal, lui donnant une couleur noire profonde et brillante spectaculaire. Contrairement aux sels noirs hawaïens, les cristaux chypriotes conservent leur forme pyramidale caractéristique. Goût marin fin et pur avec les propriétés adsorbantes du charbon actif. Très prisé dans la cuisine fusion et la gastronomie moléculaire.'},en:{n:'Cypriot Black Salt with Charcoal',o:'Cyprus',d:'Cyprus black salt is a high-purity sea salt produced from the crystal-clear waters of the eastern Mediterranean. Its hollow pyramid crystals are tinted with plant-based activated charcoal, giving them a spectacular deep, glossy black color. Unlike Hawaiian black salts, Cypriot crystals retain their characteristic pyramidal shape. Fine, pure marine taste with the adsorbing properties of activated charcoal. Highly prized in fusion cuisine and molecular gastronomy.'},region:'Europe',wiki:'Larnaca_Salt_Lake',wt:'https://upload.wikimedia.org/wikipedia/commons/c/cc/Larnaca_01-2017_img29_Salt_Lake.jpg',salinite:82,arome:68,texture:88,purete:88,rarete:62,couleur:'Noir',lat:34.9,lng:33.1},
+  {id:25,e:'🍯',fr:{n:'Sel aux Truffes Noires du Périgord',o:'France (Dordogne)',d:'Le sel aux truffes noires du Périgord est le summum des sels aromatisés haut de gamme. Alliant la fleur de sel de Guérande ou le sel de Camargue à des lamelles de truffe noire (Tuber melanosporum), il développe des arômes extraordinaires : terreux, boisés, musqués, légèrement ferreux. La truffe du Périgord est la plus précieuse de France (200-1000€/kg). Ce sel de finition est utilisé sur les œufs brouillés, le foie gras, le risotto et les pâtes fraîches. Un produit d\'exception réservé aux grandes occasions.'},en:{n:'Black Truffle Salt from Périgord',o:'France (Dordogne)',d:'Black truffle salt from Périgord is the pinnacle of premium flavored salts. Combining fleur de sel de Guérande or Camargue salt with slivers of black truffle (Tuber melanosporum), it develops extraordinary aromas: earthy, woody, musky, slightly ferrous. Périgord truffle is France\'s most precious (€200-1,000/kg). This finishing salt is used on scrambled eggs, foie gras, risotto and fresh pasta. An exceptional product reserved for great occasions.'},region:'Europe',wiki:'Tuber melanosporum',wt:'',salinite:78,arome:98,texture:85,purete:80,rarete:95,couleur:'Aromatis.',lat:45.1,lng:0.9}
+];
+
+const REGIONS=['Tous','Europe','Asie','Afrique','Amériques'];
+const COULEURS=['Tous','Blanc','Rose','Noir','Rouge','Gris','Bleu','Fumé','Aromatis.'];
+
+// ===================== RECETTES =====================
+const RECETTES=[
+  {id:'caramel',emoji:'🍬',
+   fr:{titre:'Caramel au Beurre Salé et Fleur de Sel',origine:'France (Bretagne)',intro:'Le caramel au beurre salé est l\'une des grandes créations de la gastronomie bretonne. La fleur de sel apporte un contraste saisissant avec la douceur du caramel, révélant des arômes que le sucre seul ne peut développer. Une recette simple mais magistrale.',difficulte:'Intermédiaire',temps:'20 min',sel:'Fleur de sel de Guérande ou de l\'Île de Ré',
+   ingredients:['200 g de sucre','80 g de beurre demi-sel de qualité','20 cl de crème liquide entière','1 c. à café de fleur de sel de Guérande','1 c. à café de vanille liquide'],
+   etapes:['Chauffer la crème avec la vanille, réserver au chaud.','Dans une casserole à fond épais, verser le sucre en 3 fois. Laisser fondre sans remuer jusqu\'à caramel ambré foncé.','Hors du feu, incorporer le beurre froid en morceaux en fouettant vigoureusement (attention aux projections).','Verser la crème chaude en filet en fouettant. Remettre sur feu doux 2 min.','Hors du feu, ajouter la fleur de sel. Ne pas remuer : laisser les cristaux intacts en surface.','Verser en pot. La fleur de sel doit rester visible en surface.'],
+   conseils:'La fleur de sel doit être ajoutée hors du feu pour préserver ses cristaux. Son croquant est l\'âme de la recette. Utiliser un caramel très foncé pour équilibrer la douceur.',
+   accord:'Sur des crêpes bretonnes, des glaces vanille, ou en garniture de tarte.'},
+   en:{titre:'Salted Butter Caramel with Fleur de Sel',origine:'France (Brittany)',intro:'Salted butter caramel is one of the great creations of Breton gastronomy. The fleur de sel brings a striking contrast to the sweetness of the caramel, revealing aromas that sugar alone cannot develop. A simple but masterful recipe.',difficulte:'Intermediate',temps:'20 min',sel:'Guérande or Île de Ré fleur de sel',
+   ingredients:['200 g sugar','80 g quality salted butter','20 cl heavy cream','1 tsp Guérande fleur de sel','1 tsp liquid vanilla'],
+   etapes:['Heat cream with vanilla, keep warm.','In a heavy-bottomed pan, add sugar in 3 batches. Let melt without stirring until dark amber caramel.','Off heat, incorporate cold butter in pieces whisking vigorously (beware of splashing).','Pour hot cream in a stream while whisking. Return to low heat 2 min.','Off heat, add fleur de sel. Do not stir: leave crystals intact at surface.','Pour into jar. The fleur de sel should remain visible at surface.'],
+   conseils:'Fleur de sel must be added off heat to preserve its crystals. Their crunch is the soul of the recipe. Use very dark caramel to balance the sweetness.',
+   accord:'On Breton crepes, vanilla ice cream, or as tart topping.'}
+  },
+  {id:'gravlax',emoji:'🐟',
+   fr:{titre:'Gravlax de Saumon au Sel de l\'Himalaya',origine:'Scandinavie',intro:'Le gravlax est une préparation scandinave ancestrale de saumon cru mariné au sel et à l\'aneth. L\'utilisation du sel rose de l\'Himalaya apporte une douceur minérale qui sublime la chair du saumon. Une technique simple révélatrice de la magie du sel.',difficulte:'Facile',temps:'15 min + 24-48 h marinade',sel:'Sel rose de l\'Himalaya en gros cristaux',
+   ingredients:['600 g de filet de saumon frais (sans peau)','3 c. à soupe de sel rose de l\'Himalaya grossier','2 c. à soupe de sucre roux','1 botte d\'aneth frais','1 c. à café de poivre noir concassé','1 c. à soupe d\'alcool (vodka ou aquavit, optionnel)','Zeste d\'1 citron'],
+   etapes:['Mélanger le sel de l\'Himalaya, le sucre, le poivre et le zeste de citron.','Disposer la moitié de l\'aneth au fond d\'un plat.','Enduire généreusement le saumon du mélange sel-sucre sur toutes les faces.','Poser sur l\'aneth, couvrir du reste d\'aneth. Arroser d\'alcool si désiré.','Filmer hermétiquement, poser un poids dessus. Réfrigérer 24 à 48 h.','Gratter la marinade, sécher à l\'essuie-tout. Trancher finement en biais.'],
+   conseils:'La durée de marinade dépend de l\'épaisseur. 24h pour un résultat léger, 48h pour un résultat plus ferme et salé. Le sel rose de l\'Himalaya donne une douceur minérale unique absente du sel commun.',
+   accord:'Avec blinis, crème fraîche à l\'aneth et citron. Aquavit ou champagne brut.'},
+   en:{titre:'Salmon Gravlax with Himalayan Salt',origine:'Scandinavia',intro:'Gravlax is an ancestral Scandinavian preparation of raw salmon marinated in salt and dill. Using Himalayan pink salt brings a mineral sweetness that enhances the salmon flesh. A simple technique revealing the magic of salt.',difficulte:'Easy',temps:'15 min + 24-48h marinade',sel:'Himalayan pink salt, coarse crystals',
+   ingredients:['600 g fresh salmon fillet (skinless)','3 tbsp coarse Himalayan pink salt','2 tbsp brown sugar','1 bunch fresh dill','1 tsp crushed black pepper','1 tbsp alcohol (vodka or aquavit, optional)','Zest of 1 lemon'],
+   etapes:['Mix Himalayan salt, sugar, pepper and lemon zest.','Lay half the dill at the bottom of a dish.','Generously coat the salmon with the salt-sugar mixture on all sides.','Place on dill, cover with remaining dill. Drizzle with alcohol if desired.','Wrap tightly, place a weight on top. Refrigerate 24 to 48 h.','Scrape off marinade, pat dry. Slice thinly on the bias.'],
+   conseils:'Marinade time depends on thickness. 24h for a lighter result, 48h for a firmer, saltier result. Himalayan pink salt gives a unique mineral sweetness absent from common salt.',
+   accord:'With blinis, dill cream and lemon. Aquavit or brut champagne.'}
+  },
+  {id:'truffe',emoji:'🥚',
+   fr:{titre:'Œufs Brouillés au Sel aux Truffes',origine:'France (Périgord)',intro:'Les œufs brouillés au sel de truffe sont l\'expression la plus pure du luxe culinaire. La truffe noire du Périgord révèle ses arômes au contact de la chaleur douce des œufs. Une recette qui prouve que la grande cuisine n\'a pas besoin de complication.',difficulte:'Intermédiaire',temps:'15 min',sel:'Sel aux truffes noires du Périgord',
+   ingredients:['8 œufs extra frais (idéalement stockés avec la truffe 24 h)','40 g de beurre doux de qualité (Échiré ou Bordier)','2 c. à café de sel aux truffes noires','3 c. à soupe de crème fraîche épaisse','Pain de campagne ou brioche grillée','Quelques lamelles de truffe fraîche (optionnel)'],
+   etapes:['Battre les œufs sans excès. Ne pas assaisonner encore.','Dans une casserole à fond épais, faire fondre le beurre à feu très doux.','Verser les œufs et commencer à remuer sans cesse avec une spatule en bois.','Maintenir la cuisson à feu minimum (jamais d\'ébullition). Les œufs doivent rester crémeux.','Hors du feu, incorporer la crème fraîche pour stopper la cuisson.','Assaisonner avec le sel aux truffes seulement à ce stade. Servir immédiatement sur toast.'],
+   conseils:'Le sel de truffe doit être ajouté hors du feu pour que ses arômes volatils ne s\'évaporent pas. La cuisson lente et basse est le secret : les Français disent "il faut les cuire comme on attend un ami".',
+   accord:'Avec un champagne blanc de blancs (Blanc de Blancs) ou un bourgogne blanc Meursault.'},
+   en:{titre:'Scrambled Eggs with Truffle Salt',origine:'France (Périgord)',intro:'Scrambled eggs with truffle salt are the purest expression of culinary luxury. Périgord black truffle reveals its aromas through the gentle heat of eggs. A recipe proving that great cuisine needs no complication.',difficulte:'Intermediate',temps:'15 min',sel:'Périgord black truffle salt',
+   ingredients:['8 very fresh eggs (ideally stored with truffle 24h)','40 g quality unsalted butter (Échiré or Bordier)','2 tsp black truffle salt','3 tbsp thick cream','Country bread or toasted brioche','A few fresh truffle slivers (optional)'],
+   etapes:['Beat eggs gently. Do not season yet.','In a heavy-bottomed pan, melt butter over very low heat.','Pour eggs and stir constantly with a wooden spatula.','Maintain minimal heat (no boiling). Eggs must remain creamy.','Off heat, add cream to stop cooking.','Season with truffle salt only at this stage. Serve immediately on toast.'],
+   conseils:'Truffle salt must be added off heat so its volatile aromas don\'t evaporate. Slow, low cooking is the secret: the French say "cook them as you would wait for a friend".',
+   accord:'With a blanc de blancs champagne or Meursault white Burgundy.'}
+  },
+  {id:'margarita',emoji:'🍹',
+   fr:{titre:'Margarita au Sel Rose de l\'Himalaya',origine:'Mexique / États-Unis',intro:'Le sel sur le bord du verre est aussi important que le contenu de la margarita. Le sel rose de l\'Himalaya, avec sa douceur minérale et sa couleur spectaculaire, sublime ce cocktail classique et lui donne une dimension sensorielle nouvelle.',difficulte:'Facile',temps:'5 min',sel:'Sel rose de l\'Himalaya en cristaux moyens',
+   ingredients:['6 cl de tequila blanco de qualité','3 cl de Triple Sec ou Cointreau','4 cl de jus de citron vert frais','1 c. à soupe de sirop d\'agave','Sel rose de l\'Himalaya pour le bord','Glaçons','1 tranche de citron vert (décor)'],
+   etapes:['Verser le sel rose dans une assiette creuse.','Frotter le bord du verre avec une tranche de citron vert.','Tremper le bord humide dans le sel rose en tournant pour un enrobage régulier.','Dans un shaker rempli de glaçons, verser tequila, Triple Sec, jus de citron vert et sirop d\'agave.','Shaker vigoureusement 15 secondes.','Filtrer dans le verre préparé sur glaçons. Décorer d\'une rondelle de citron vert.'],
+   conseils:'La qualité de la tequila est primordiale. Le sel rose de l\'Himalaya est moins agressif que le sel ordinaire et complète mieux le tequila premium. Utiliser des cristaux de taille moyenne pour un bord régulier.',
+   accord:'Avec des tacos, un guacamole frais ou des nachos artisanaux.'},
+   en:{titre:'Margarita with Himalayan Pink Salt',origine:'Mexico / United States',intro:'The salt on the rim is as important as the margarita itself. Himalayan pink salt, with its mineral sweetness and spectacular color, enhances this classic cocktail and gives it a new sensory dimension.',difficulte:'Easy',temps:'5 min',sel:'Himalayan pink salt, medium crystals',
+   ingredients:['6 cl quality blanco tequila','3 cl Triple Sec or Cointreau','4 cl fresh lime juice','1 tbsp agave syrup','Himalayan pink salt for rim','Ice cubes','1 lime slice (garnish)'],
+   etapes:['Pour pink salt into a shallow dish.','Rub glass rim with a lime slice.','Dip moist rim in pink salt rotating for even coating.','In a shaker filled with ice, pour tequila, Triple Sec, lime juice and agave syrup.','Shake vigorously 15 seconds.','Strain into prepared glass over ice. Garnish with lime wheel.'],
+   conseils:'Tequila quality is paramount. Himalayan pink salt is less aggressive than ordinary salt and pairs better with premium tequila. Use medium-sized crystals for an even rim.',
+   accord:'With tacos, fresh guacamole or artisanal nachos.'}
+  },
+  {id:'croute',emoji:'🐟',
+   fr:{titre:'Bar en Croûte de Sel Gris de Guérande',origine:'France (cuisine classique)',intro:'La cuisson en croûte de sel est une technique ancestrale qui date de l\'Antiquité. Le sel cuit à la vapeur le poisson dans son propre jus, préservant une jutosité et des arômes incomparables. Le sel gris de Guérande, naturellement humide, est parfait pour cette technique.',difficulte:'Intermédiaire',temps:'35 min',sel:'Sel gris de Guérande (2 kg pour un bar entier)',
+   ingredients:['1 bar entier de 1,2 kg (vidé, non écaillé)','2 kg de sel gris de Guérande','2 blancs d\'œufs','1 bouquet d\'herbes fraîches (thym, laurier, fenouil, romarin)','1 citron tranché','1 c. à soupe d\'eau'],
+   etapes:['Préchauffer le four à 220°C.','Mélanger le sel gris avec les blancs d\'œufs et l\'eau jusqu\'à consistance de sable humide.','Étaler un lit de sel de 2 cm dans un plat. Disposer les herbes et le citron.','Poser le bar farci des herbes. Recouvrir entièrement de sel en tassant bien.','Enfourner 25 min pour 1,2 kg (compter 20 min/kg).','Briser la croûte de sel à table, avec un marteau ou un couteau. Servir immédiatement.'],
+   conseils:'Ne pas écailler le poisson : les écailles forment une barrière naturelle contre le sel. La croûte ne doit pas être consommée. Vérifier la cuisson en insérant une aiguille dans la chair : elle doit ressortir tiède.',
+   accord:'Avec un Sancerre blanc ou un Muscadet sur lie, et une ratatouille provençale.'},
+   en:{titre:'Sea Bass in Grey Salt Crust (Guérande)',origine:'France (classic cuisine)',intro:'Salt crust cooking is an ancient technique dating back to antiquity. The salt steam-cooks the fish in its own juices, preserving incomparable juiciness and aromas. Guérande grey salt, naturally moist, is perfect for this technique.',difficulte:'Intermediate',temps:'35 min',sel:'Guérande grey salt (2 kg for a whole bass)',
+   ingredients:['1 whole sea bass 1.2 kg (gutted, unscaled)','2 kg Guérande grey salt','2 egg whites','1 bunch fresh herbs (thyme, bay, fennel, rosemary)','1 sliced lemon','1 tbsp water'],
+   etapes:['Preheat oven to 220°C.','Mix grey salt with egg whites and water to damp sand consistency.','Spread a 2 cm salt bed in a dish. Arrange herbs and lemon.','Place bass stuffed with herbs. Cover entirely with salt, packing well.','Bake 25 min for 1.2 kg (allow 20 min/kg).','Break salt crust at table with a hammer or knife. Serve immediately.'],
+   conseils:'Do not scale the fish: scales form a natural barrier against salt. The crust is not for eating. Check doneness by inserting a needle into the flesh: it should come out warm.',
+   accord:'With white Sancerre or Muscadet sur lie, and Provençal ratatouille.'}
+  }
+];
+
+// ===================== HISTOIRE =====================
+const HISTOIRE=[
+  {emoji:'🌊',fr:{periode:'Antiquité — L\'Or Blanc',ere:'VIe millénaire av. J.-C. – IVe s. ap. J.-C.',texte:'Le sel est l\'une des premières denrées commerciales de l\'humanité. Les premières salines connues datent de 6 000 av. J.-C. en Roumanie (Lunca). En Chine, la production de sel remonte à 2 700 av. J.-C. Les Romains l\'appelaient "salarium" et payaient parfois leurs soldats en sel — c\'est l\'origine du mot "salaire". Pline l\'Ancien écrivait : "Les dieux ne sont pas plus chers à l\'homme que le sel."'},en:{periode:'Antiquity — White Gold',ere:'6th millennium BC – 4th c. AD',texte:'Salt is one of humanity\'s first trade commodities. The earliest known salt works date to 6,000 BC in Romania (Lunca). In China, salt production dates to 2,700 BC. The Romans called it "salarium" and sometimes paid their soldiers in salt — this is the origin of the word "salary". Pliny the Elder wrote: "The gods are not dearer to man than salt."'}},
+  {emoji:'🏛️',fr:{periode:'Antiquité Égyptienne — Momification et Sacré',ere:'3200 – 30 av. J.-C.',texte:'L\'Égypte ancienne utilisait le natron (carbonate et bicarbonate de sodium naturels) pour momifier ses morts depuis 3 200 av. J.-C. Le sel participait aussi aux rituels religieux et servait d\'offrande aux dieux. Les grandes salines du Delta du Nil alimentaient tout le bassin méditerranéen. Hérodote décrit les salines égyptiennes comme les plus productives du monde connu.'},en:{periode:'Ancient Egypt — Mummification and Sacred Rituals',ere:'3200 – 30 BC',texte:'Ancient Egypt used natron (natural sodium carbonate and bicarbonate) to mummify its dead since 3,200 BC. Salt also participated in religious rituals and served as an offering to the gods. The great salt pans of the Nile Delta supplied the entire Mediterranean basin. Herodotus describes Egyptian salt pans as the most productive in the known world.'}},
+  {emoji:'⚔️',fr:{periode:'Moyen Âge — Guerres du Sel',ere:'VIe – XVe siècle',texte:'Au Moyen Âge, le sel est si précieux qu\'il déclenche des guerres. La Gabelle, impôt sur le sel en France instaurée en 1286, provoque des rébellions à répétition. Les routes du sel (Via Salaria en Italie, Chemin de la Gabelle en France) structurent le commerce européen. Venise bâtit sa puissance sur le commerce du sel adriatique. Le sel de Lüneburg (Allemagne) alimente la conservation du hareng de la mer du Nord pendant des siècles.'},en:{periode:'Middle Ages — Salt Wars',ere:'6th – 15th century',texte:'In the Middle Ages, salt is so precious it triggers wars. The Gabelle, a tax on salt in France established in 1286, provokes repeated rebellions. Salt routes (Via Salaria in Italy, Chemin de la Gabelle in France) structure European trade. Venice builds its power on Adriatic salt trade. Lüneburg salt (Germany) fuels North Sea herring preservation for centuries.'}},
+  {emoji:'🚢',fr:{periode:'Grandes Découvertes — Sel et Conservation',ere:'XVe – XVIIIe siècle',texte:'Sans sel, les Grandes Découvertes n\'auraient pas été possibles. La conservation des viandes et poissons salés permettait les longs voyages. La morrue salée (bacalhau) financée par le sel de Setúbal permit aux Portugais d\'explorer les Amériques. Le commerce triangulaire inclut le sel comme marchandise d\'échange. Les colonies américaines (Nouvelle-Angleterre, Canada) se développent autour de la pêche à la morue salée.'},en:{periode:'Age of Discovery — Salt and Preservation',ere:'15th – 18th century',texte:'Without salt, the Age of Discovery would not have been possible. The preservation of salted meats and fish enabled long voyages. Salted cod (bacalhau) financed by Setúbal salt allowed the Portuguese to explore the Americas. The triangular trade includes salt as a barter commodity. American colonies (New England, Canada) develop around salted cod fishing.'}},
+  {emoji:'🧂',fr:{periode:'XIXe s. — Révolution Industrielle',ere:'1800 – 1900',texte:'La révolution industrielle transforme la production de sel. Les techniques d\'extraction minière remplacent progressivement les salines artisanales dans les pays nordiques. La chloro-alkali (électrolyse du sel) donne naissance à l\'industrie chimique moderne (PVC, chlore, soude). Le sel commence à être iodé artificiellement pour lutter contre les maladies thyroïdiennes dans certains pays. L\'invention du réfrigérateur annonce le déclin du sel comme conservateur alimentaire principal.'},en:{periode:'19th c. — Industrial Revolution',ere:'1800 – 1900',texte:'The industrial revolution transforms salt production. Mining techniques gradually replace artisanal salt pans in Nordic countries. Chloro-alkali (salt electrolysis) gives birth to the modern chemical industry (PVC, chlorine, soda). Salt begins to be artificially iodized to combat thyroid diseases in some countries. The invention of the refrigerator heralds the decline of salt as the main food preservative.'}},
+  {emoji:'⭐',fr:{periode:'XXIe s. — Renaissance des Grands Crus de Sel',ere:'2000 – aujourd\'hui',texte:'Depuis les années 2000, les chefs étoilés et épicuriens redécouvrent les "sels de terroir" : fleur de sel de Guérande et de l\'Île de Ré (IGP), sel de Maldon, sel de l\'Himalaya, sel bleu de Perse... Ces sels artisanaux atteignent des prix de 50 à 300€/kg. Le mouvement "Slow Food" et la cuisine biodynamique valorisent les sels non raffinés riches en oligoéléments. L\'ère du sel blanc raffiné est questionnée par les nutritionnistes et les gastronomes.'},en:{periode:'21st c. — Revival of Grand Cru Salts',ere:'2000 – today',texte:'Since the 2000s, starred chefs and epicureans have been rediscovering "terroir salts": fleur de sel de Guérande and Île de Ré (PGI), Maldon salt, Himalayan salt, Persian blue salt... These artisanal salts reach prices of €50 to €300/kg. The "Slow Food" movement and biodynamic cuisine promote unrefined salts rich in trace elements. The era of refined white salt is being questioned by nutritionists and gastronomes.'}}
+];
+
+// ===================== QUIZ =====================
+const QUIZ=[
+  {q:{fr:'Quelle est l\'origine du mot "salaire" ?',en:'What is the origin of the word "salary"?'},a:{fr:['Du latin "salarium", paiement en sel','Du latin "sal", le sel','Du grec "halos", la mer','Du germanique "salz"'],en:['From Latin "salarium", payment in salt','From Latin "sal", salt','From Greek "halos", the sea','From Germanic "salz"']},c:0},
+  {q:{fr:'La fleur de sel de Guérande a obtenu son IGP en quelle année ?',en:'In what year did fleur de sel de Guérande obtain its PGI?'},a:{fr:['2012','1998','2005','2018'],en:['2012','1998','2005','2018']},c:0},
+  {q:{fr:'Quel est le plus grand désert de sel du monde ?',en:'What is the world\'s largest salt flat?'},a:{fr:['Salar d\'Uyuni (Bolivie)','Lac Rose (Sénégal)','Mer Morte (Israël)','Salines de Guerrero Negro (Mexique)'],en:['Salar de Uyuni (Bolivia)','Pink Lake (Senegal)','Dead Sea (Israel)','Guerrero Negro salt works (Mexico)']},c:0},
+  {q:{fr:'Qu\'est-ce que le sel de "Kala Namak" ?',en:'What is "Kala Namak" salt?'},a:{fr:['Un sel volcanique indien soufré','Un sel rose de l\'Himalaya','Un sel noir hawaïen','Un sel bleu de Perse'],en:['An Indian volcanic sulfurous salt','A Himalayan pink salt','A Hawaiian black salt','A Persian blue salt']},c:0},
+  {q:{fr:'La couleur rose du Lac Retba au Sénégal est due à :',en:'The pink color of Lake Retba in Senegal is due to:'},a:{fr:['Une microalgue (Dunaliella salina)','De l\'oxyde de fer','Des cristaux de sel colorés','La couleur du fond sableux'],en:['A microalgae (Dunaliella salina)','Iron oxide','Colored salt crystals','The color of the sandy bottom']},c:0},
+  {q:{fr:'De quoi provient la couleur bleue du sel de Perse ?',en:'What causes the blue color of Persian salt?'},a:{fr:['De la sylvite (un minéral de potassium)','D\'algues microscopiques','D\'un traitement au charbon actif','D\'impuretés de cuivre'],en:['Sylvite (a potassium mineral)','Microscopic algae','Activated charcoal treatment','Copper impurities']},c:0},
+  {q:{fr:'Quelle technique de cuisson ancestrale utilise le sel gris de Guérande ?',en:'Which ancient cooking technique uses Guérande grey salt?'},a:{fr:['La croûte de sel pour le poisson','La saumure de conservation','Le fumage au sel','La fermentation lactique'],en:['Salt crust for fish','Preservation brine','Salt smoking','Lactic fermentation']},c:0},
+  {q:{fr:'Les salines de Maras au Pérou sont situées à quelle altitude ?',en:'At what altitude are the Maras salt pans in Peru located?'},a:{fr:['3 000 mètres','1 500 mètres','4 500 mètres','500 mètres'],en:['3,000 metres','1,500 metres','4,500 metres','500 metres']},c:0},
+  {q:{fr:'La Gabelle, l\'impôt sur le sel en France, a été instaurée en :',en:'The Gabelle, the salt tax in France, was established in:'},a:{fr:['1286','1515','1789','1066'],en:['1286','1515','1789','1066']},c:0},
+  {q:{fr:'Le sel de Maldon est produit depuis quelle époque ?',en:'Since when has Maldon salt been produced?'},a:{fr:['Le XIe siècle (mentionné dans le Domesday Book)','Le XVe siècle','Le XIXe siècle','Le XVIIe siècle'],en:['The 11th century (mentioned in the Domesday Book)','The 15th century','The 19th century','The 17th century']},c:0}
+];
+
+// ===================== MES APPS =====================
+const MES_APPS=[
+  {id:'6762006105',n:'Iconic Covers',e:'📰'},{id:'6763507194',n:'Hotels RoofTop',e:'🏨'},{id:'6762618424',n:'Ponts du Monde',e:'🌉'},{id:'6763076110',n:'Paquebots',e:'🚢'},{id:'6763069304',n:'Avions Légende',e:'✈️'},{id:'6763071567',n:'Voitures Légende',e:'🏎️'},{id:'6762077646',n:'Flip Board',e:'🟫'},{id:'6762632868',n:'Trains',e:'🚂'},{id:'6762823383',n:'Châteaux Loire',e:'🏰'},{id:'6762598304',n:'Mers & Océans',e:'🌊'},{id:'6762594201',n:'Détroits',e:'🗺️'},{id:'6762558969',n:'ColorCode',e:'🎨'},{id:'6762552826',n:'Lexigo',e:'🔤'},{id:'6762542395',n:'Conquêtes',e:'⚖️'},{id:'6762522136',n:'Dynasties Chine',e:'🐉'},{id:'6762452564',n:'Dynasties Russie',e:'🦅'},{id:'6762370541',n:'États-Unis',e:'🗽'},{id:'6762091681',n:'Bataille Navale',e:'⚓'},{id:'6762098486',n:'Familles Royales',e:'👑'},{id:'6762263227',n:'Leaders EU',e:'🏛️'},{id:'6762346365',n:'Pays UE',e:'🇪🇺'},{id:'6762256169',n:'Présidents US',e:'🦅'},{id:'6762076518',n:'Dames',e:'⬛'},{id:'6761993002',n:'Comédie Fr.',e:'🎭'},{id:'6761769529',n:'Institut France',e:'🏛️'},{id:'6761324444',n:'Présidents FR',e:'🗼'},{id:'6761709149',n:'Saint-Denis',e:'⛪'},{id:'6761685637',n:'Arbres France',e:'🌳'},{id:'6761363063',n:'Sénat',e:'🏛️'},{id:'6761656628',n:'Compositeurs',e:'🎼'},{id:'6761374601',n:'Maréchaux',e:'⚔️'},{id:'6761322546',n:'Rois de France',e:'👑'},{id:'6761361079',n:'Assemblée',e:'🏛️'},{id:'6761335268',n:'Panthéon',e:'🏛️'},{id:'1483084001',n:'Belote Calc',e:'🃏'},{id:'6760751055',n:'Cimetières',e:'🕯️'},{id:'1481989301',n:'Tarots Calc',e:'🔮'},{id:'6761334922',n:'Académie Fr.',e:'📚'},{id:'6761293938',n:'Scènes Paris',e:'🎪'},{id:'6760890465',n:'Musées Paris',e:'🖼️'},{id:'6760929391',n:'Théâtres Paris',e:'🎭'},{id:'6760617965',n:'MesRestaurants',e:'🍽️'},{id:'6760126279',n:'Cave Manager',e:'🍷'},{id:'6759219383',n:'Frigo Manager',e:'🧊'},{id:'1475884625',n:'Toi ou Moi',e:'💕'}
+];
+
+// ===================== STATE =====================
+let lang='fr',currentRegion='Tous',currentSearch='',currentTab='list';
+let quizIdx=0,quizScore=0,quizAnswered=false;
+let mapInitialized=false,leafletMap=null;
+
+// ===================== LANG =====================
+function toggleLang(){
+  lang=lang==='fr'?'en':'fr';
+  document.querySelector('.lang-btn').textContent=lang==='fr'?'🇬🇧':'🇫🇷';
+  document.getElementById('appTitleEl').textContent=lang==='fr'?'🧂 Sels du Monde':'🧂 Salts of the World';
+  const tabs=document.querySelectorAll('.tab');
+  const tl=lang==='fr'
+    ?[' 🧂 ','  🏆  ','  🗺️  ','  🍽️  ','  📜  ','  ❓  ','  📱  ']
+    :[' 🧂 ','  🏆  ','  🗺️  ','  🍽️  ','  📜  ','  ❓  ','  📱  '];
+  tabs.forEach((t,i)=>t.textContent=tl[i]);
+  document.getElementById('searchInput').placeholder=lang==='fr'?'Rechercher un sel...':'Search a salt...';
+  filterCards();
+  if(currentTab==='rank') renderRank();
+  if(currentTab==='recettes') renderRecettes();
+  if(currentTab==='histoire') renderHistoire();
+  if(currentTab==='quiz') renderQuiz();
+}
+
+// ===================== TABS =====================
+function switchTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab=tab;
+  const map2={'list':'listView','rank':'rankView','map':'mapView','recettes':'recettesView','histoire':'histoireView','quiz':'quizView','apps':'appsView'};
+  ['listView','rankView','mapView','recettesView','histoireView','quizView','appsView'].forEach(v=>{
+    const e2=document.getElementById(v);
+    if(v===map2[tab]){
+      if(v==='listView'||v==='mapView'){e2.style.display='flex';e2.style.flexDirection='column';}
+      else e2.classList.remove('hidden');
+    } else {
+      if(v==='listView'||v==='mapView') e2.style.display='none';
+      else e2.classList.add('hidden');
+    }
+  });
+  if(tab==='rank') renderRank();
+  if(tab==='map'){setTimeout(initMap,50);if(mapInitialized)setTimeout(()=>leafletMap.invalidateSize(),300);}
+  if(tab==='recettes') renderRecettes();
+  if(tab==='histoire') renderHistoire();
+  if(tab==='quiz') renderQuiz();
+  if(tab==='apps') renderApps();
+}
+
+// ===================== CHIPS =====================
+function buildChips(){
+  document.getElementById('chipsContainer').innerHTML=
+    REGIONS.map(r=>'<button class="chip'+(r==='Tous'?' active':'')+'" onclick="setRegion(\''+r+'\',this)">'+r+'</button>').join('');
+}
+function setRegion(r,el){
+  currentRegion=r;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  filterCards();
+}
+
+// ===================== CARDS =====================
+function filterCards(){
+  currentSearch=document.getElementById('searchInput').value.toLowerCase();
+  const list=SELS.filter(c=>{
+    const nm=c[lang].n.toLowerCase()+c[lang].o.toLowerCase();
+    return (currentRegion==='Tous'||c.region===currentRegion)&&(!currentSearch||nm.includes(currentSearch));
+  });
+  renderCards(list);
+}
+function renderCards(list){
+  document.getElementById('cardsContainer').innerHTML='<div class="cards">'+list.map(c=>{
+    const d=c[lang];
+    return '<div class="card" onclick="openDetail('+c.id+')">'
+      +'<div class="salt-img-wrap" id="imgwrap-'+c.id+'">'
+      +'<img class="salt-img loading" id="img-'+c.id+'" alt="'+d.n+'">'
+      +'</div>'
+      +'<div class="card-info">'
+      +'<div class="card-name">'+d.n+'</div>'
+      +'<div class="card-origin">'+c.e+' '+d.o+'</div>'
+      +'<div class="arome-bar"><div class="arome-fill" style="width:'+c.arome+'%"></div></div>'
+      +'<div class="card-badge">'+c.couleur+' · '+c.region+'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+  list.forEach(c=>{
+    const el=document.getElementById('img-'+c.id);
+    if(el) loadImg(c,el);
+  });
+}
+
+// ===================== IMAGE =====================
+const imgCache={};
+const imgQueue=[];
+let imgBusy=false;
+
+function applyImg(el,src){
+  if(!el||!document.body.contains(el)) return;
+  el.src=src;
+  el.classList.remove('loading');
+  el.onerror=function(){};
+}
+
+function setFallback(el){
+  if(!el||!document.body.contains(el)) return;
+  const wrap=el.parentNode;
+  if(wrap){wrap.innerHTML='<span style="font-size:28px">🧂</span>';}
+}
+
+function queueImg(c,el){
+  imgQueue.push({c,el});
+  if(!imgBusy) processQueue();
+}
+
+function processQueue(){
+  if(!imgQueue.length){imgBusy=false;return;}
+  imgBusy=true;
+  const {c,el}=imgQueue.shift();
+  if(!document.body.contains(el)){processQueue();return;}
+  let apiUrl;
+  if(c.wt && c.wt.indexOf('upload.wikimedia.org')!==-1){
+    const parts=c.wt.split('/');
+    const fname=decodeURIComponent(parts[parts.length-1].replace(/^\d+px-/,''));
+    apiUrl='https://commons.wikimedia.org/w/api.php?action=query&titles=File:'+encodeURIComponent(fname)+'&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*';
+  } else if(c.wt && c.wt.length>0){
+    apiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wt)+'&prop=pageimages&pithumbsize=400&format=json&origin=*';
+  } else if(c.wiki){
+    apiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wiki)+'&prop=pageimages&pithumbsize=400&format=json&origin=*';
+  } else {setFallback(el);processQueue();return;}
+  fetch(apiUrl).then(function(r){return r.json();}).then(function(d){
+    const pg=Object.values(d.query.pages)[0];
+    const src=(pg&&pg.imageinfo&&pg.imageinfo[0]&&(pg.imageinfo[0].thumburl||pg.imageinfo[0].url))||(pg&&pg.thumbnail&&pg.thumbnail.source);
+    if(src){imgCache[c.id]=src;applyImg(el,src);}
+    else setFallback(el);
+    processQueue();
+  }).catch(function(){setFallback(el);processQueue();});
+}
+
+function loadImg(c,el){
+  if(imgCache[c.id]){applyImg(el,imgCache[c.id]);return;}
+  let apiUrl;
+  if(c.wt && c.wt.indexOf('upload.wikimedia.org')!==-1){
+    const parts=c.wt.split('/');
+    const fname=decodeURIComponent(parts[parts.length-1].replace(/^\d+px-/,''));
+    apiUrl='https://commons.wikimedia.org/w/api.php?action=query&titles=File:'+encodeURIComponent(fname)+'&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json';
+  } else if(c.wt && c.wt.length>0){
+    apiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wt)+'&prop=pageimages&pithumbsize=400&format=json';
+  } else if(c.wiki){
+    apiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wiki)+'&prop=pageimages&pithumbsize=400&format=json';
+  } else return;
+  if(typeof CapacitorHttp !== 'undefined'){
+    CapacitorHttp.get({url:apiUrl}).then(function(r){
+      const d=JSON.parse(r.data);
+      const pg=Object.values(d.query.pages)[0];
+      const src=(pg&&pg.imageinfo&&pg.imageinfo[0]&&(pg.imageinfo[0].thumburl||pg.imageinfo[0].url))||(pg&&pg.thumbnail&&pg.thumbnail.source);
+      if(src){
+        CapacitorHttp.get({url:src,responseType:'arraybuffer'}).then(function(r2){
+          const b64='data:image/jpeg;base64,'+r2.data;
+          imgCache[c.id]=b64;applyImg(el,b64);
+        }).catch(function(){setFallback(el);});
+      } else setFallback(el);
+    }).catch(function(){setFallback(el);});
+  } else {
+    queueImg(c,el);
+  }
+}
+
+// ===================== DETAIL =====================
+function openDetail(id){
+  const c=SELS.find(function(x){return x.id===id;});
+  if(!c) return;
+  const d=c[lang];
+  document.getElementById('detailTitle').textContent=d.n;
+  document.getElementById('detailBody').innerHTML=
+    '<div class="detail-img-container" id="detail-img-'+id+'"><span>🧂</span></div>'
+    +'<div class="detail-content">'
+    +'<div class="detail-meta">'
+    +'<div class="meta-tag">🌍 <span>'+d.o+'</span></div>'
+    +'<div class="meta-tag">📍 <span>'+c.region+'</span></div>'
+    +'<div class="meta-tag">🧂 <span>'+c.couleur+'</span></div>'
+    +'</div>'
+    +'<div class="profil-box">'
+    +[
+      [lang==='fr'?'Salinité':'Salinity','fill-salinite',c.salinite],
+      [lang==='fr'?'Arômes':'Aromas','fill-arome',c.arome],
+      [lang==='fr'?'Texture':'Texture','fill-textures',c.texture],
+      [lang==='fr'?'Pureté':'Purity','fill-purete',c.purete],
+      [lang==='fr'?'Rareté':'Rarity','fill-rarete',c.rarete]
+    ].map(function(row){
+      return '<div class="profil-row">'
+        +'<div class="profil-label">'+row[0]+'</div>'
+        +'<div class="profil-bar"><div class="profil-fill '+row[1]+'" style="width:'+row[2]+'%"></div></div>'
+        +'<div class="profil-value">'+row[2]+'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    +'<div class="detail-section"><h3>'+(lang==='fr'?'Description':'Description')+'</h3><p>'+d.d+'</p></div>'
+    +'</div>';
+  // Charger la photo dans le détail via loadImg (même logique que les cartes)
+  var detailImgEl = document.createElement('img');
+  detailImgEl.style.cssText='width:100%;height:100%;object-fit:cover';
+  detailImgEl.className='salt-img loading';
+  detailImgEl.id='detail-img-img-'+id;
+  var detailWrap = document.getElementById('detail-img-'+id);
+  if(detailWrap){
+    // override setFallback pour le détail : garder le conteneur intact
+    var cDetail = Object.assign({},c,{_detailId: id});
+    detailWrap.innerHTML='';
+    detailWrap.appendChild(detailImgEl);
+    // utiliser une version élargie (800px) via wt ou wiki
+    var detailApiUrl;
+    if(c.wt && c.wt.indexOf('upload.wikimedia.org')!==-1){
+      var parts=c.wt.split('/');
+      var fname=decodeURIComponent(parts[parts.length-1].replace(/^\d+px-/,''));
+      detailApiUrl='https://commons.wikimedia.org/w/api.php?action=query&titles=File:'+encodeURIComponent(fname)+'&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json';
+    } else if(c.wt && c.wt.length>0){
+      detailApiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wt)+'&prop=pageimages&pithumbsize=800&format=json';
+    } else if(c.wiki){
+      detailApiUrl='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(c.wiki)+'&prop=pageimages&pithumbsize=800&format=json';
+    }
+    if(detailApiUrl){
+      function applyDetailImg(src){
+        var w=document.getElementById('detail-img-'+id);
+        if(!w) return;
+        var img2=document.createElement('img');
+        img2.src=src;
+        img2.style.cssText='width:100%;height:100%;object-fit:cover';
+        w.innerHTML='';w.appendChild(img2);
+      }
+      if(typeof CapacitorHttp !== 'undefined'){
+        CapacitorHttp.get({url:detailApiUrl}).then(function(r){
+          var d2=JSON.parse(r.data);
+          var pg=Object.values(d2.query.pages)[0];
+          var src=(pg&&pg.imageinfo&&pg.imageinfo[0]&&(pg.imageinfo[0].thumburl||pg.imageinfo[0].url))||(pg&&pg.thumbnail&&pg.thumbnail.source);
+          if(!src) return;
+          CapacitorHttp.get({url:src,responseType:'arraybuffer'}).then(function(r2){
+            applyDetailImg('data:image/jpeg;base64,'+r2.data);
+          }).catch(function(){});
+        }).catch(function(){});
+      } else {
+        fetch(detailApiUrl+'&origin=*').then(function(r){return r.json();}).then(function(d2){
+          var pg=Object.values(d2.query.pages)[0];
+          var src=(pg&&pg.imageinfo&&pg.imageinfo[0]&&(pg.imageinfo[0].thumburl||pg.imageinfo[0].url))||(pg&&pg.thumbnail&&pg.thumbnail.source);
+          if(src) applyDetailImg(src);
+        }).catch(function(){});
+      }
+    }
+  }
+  const dv=document.getElementById('detailView');
+  dv.style.display='flex';dv.style.flexDirection='column';
+}
+    
+function closeDetail(){document.getElementById('detailView').style.display='none';}
+
+// ===================== RANKING =====================
+function renderRank(){
+  const sorted=[].concat(SELS).sort(function(a,b){return b.arome-a.arome;});
+  document.getElementById('rankList').innerHTML=sorted.map(function(c,i){
+    const d=c[lang];
+    return '<div class="rank-item" onclick="openDetail('+c.id+')">'
+      +'<div class="rank-num'+(i<3?' top3':'')+'">'+( i+1)+'</div>'
+      +'<div class="rank-emoji">'+c.e+'</div>'
+      +'<div class="rank-info"><div class="rank-name">'+d.n+'</div><div class="rank-region">'+d.o+'</div></div>'
+      +'<div class="rank-bar-wrap">'
+      +'<div class="rank-bar"><div class="rank-fill" style="width:'+c.arome+'%"></div></div>'
+      +'<div class="rank-score">'+c.arome+'/100</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ===================== MAP =====================
+function initMap(){
+  if(mapInitialized) return;
+  mapInitialized=true;
+  leafletMap=L.map('map',{zoomControl:false,attributionControl:false}).setView([20,10],2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(leafletMap);
+  L.control.zoom({position:'bottomright'}).addTo(leafletMap);
+  SELS.forEach(function(c){
+    const d=c[lang];
+    const icon=L.divIcon({html:'<div style="font-size:22px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8))">🧂</div>',className:'',iconSize:[28,28],iconAnchor:[14,14]});
+    const m=L.marker([c.lat,c.lng],{icon}).addTo(leafletMap);
+    m.bindPopup(
+      '<div class="popup-name">'+d.n+'</div>'
+      +'<div style="font-size:12px;color:var(--muted)">📍 '+d.o+' · '+c.couleur+'</div>'
+      +'<button class="popup-btn" onclick="openDetail('+c.id+')">'+(lang==='fr'?'Voir la fiche':'View details')+'</button>'
+    );
+  });
+  setTimeout(function(){leafletMap.invalidateSize();},100);
+}
+
+// ===================== RECETTES =====================
+function renderRecettes(){
+  document.getElementById('recettesList').innerHTML=
+    '<div style="padding:12px 12px 4px"><p style="font-size:12px;color:var(--muted);font-style:italic;padding:0 4px 10px">'
+    +(lang==='fr'?'5 recettes emblématiques au sel':'5 iconic salt recipes')
+    +'</p></div>'
+    +RECETTES.map(function(r){
+      const d=r[lang];
+      return '<div class="recette-card" onclick="openRecette(\''+r.id+'\')"><div class="recette-card-header">'
+        +'<div class="recette-emoji">'+r.emoji+'</div>'
+        +'<div><div class="recette-title">'+d.titre+'</div><div class="recette-origin">'+d.origine+'</div></div>'
+        +'</div>'
+        +'<div class="recette-meta">'
+        +'<div>⏱ <span>'+d.temps+'</span></div>'
+        +'<div>📊 <span>'+d.difficulte+'</span></div>'
+        +'<div>🧂 <span>'+d.sel.substring(0,26)+(d.sel.length>26?'…':'')+'</span></div>'
+        +'</div></div>';
+    }).join('');
+}
+function openRecette(id){
+  const r=RECETTES.find(function(x){return x.id===id;});
+  if(!r) return;
+  const d=r[lang];
+  document.getElementById('recetteTitleEl').textContent=r.emoji+' '+d.titre;
+  document.getElementById('recetteBody').innerHTML=
+    '<div class="recette-section"><p style="font-size:14px;color:var(--text);line-height:1.7;font-style:italic">'+d.intro+'</p></div>'
+    +'<div class="recette-section"><h3>'+(lang==='fr'?'Sel recommandé':'Recommended Salt')+'</h3>'
+    +'<div style="background:var(--bg3);border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:var(--gold2)">🧂 '+d.sel+'</div></div>'
+    +'<div class="recette-section"><h3>'+(lang==='fr'?'Ingrédients':'Ingredients')+'</h3>'
+    +d.ingredients.map(function(i){return '<div class="ingredient-item">'+i+'</div>';}).join('')+'</div>'
+    +'<div class="recette-section"><h3>'+(lang==='fr'?'Préparation':'Preparation')+'</h3>'
+    +d.etapes.map(function(e,i){return '<div class="step-item"><div class="step-num">'+(i+1)+'</div><div class="step-text">'+e+'</div></div>';}).join('')+'</div>'
+    +'<div class="recette-section"><h3>'+(lang==='fr'?'Conseil':'Tip')+'</h3><div class="conseil-box">'+d.conseils+'</div></div>'
+    +'<div class="recette-section"><h3>'+(lang==='fr'?'Accord':'Pairing')+'</h3><p style="font-size:14px;color:var(--text)">'+d.accord+'</p></div>';
+  const rv=document.getElementById('recetteDetail');
+  rv.style.display='flex';rv.style.flexDirection='column';
+}
+function closeRecette(){document.getElementById('recetteDetail').style.display='none';}
+
+// ===================== HISTOIRE =====================
+function renderHistoire(){
+  document.getElementById('histoireContainer').innerHTML=
+    '<p style="font-size:12px;color:var(--muted);font-style:italic;padding:0 4px 12px">'
+    +(lang==='fr'?'De l\'Antiquité à nos jours, le sel a façonné les civilisations.':'From Antiquity to today, salt has shaped civilisations.')
+    +'</p>'
+    +HISTOIRE.map(function(h){
+      const d=h[lang];
+      return '<div class="histoire-card">'
+        +'<div class="histoire-card-header">'
+        +'<div class="histoire-emoji">'+h.emoji+'</div>'
+        +'<div><div class="histoire-period">'+d.periode+'</div><div class="histoire-era">'+d.ere+'</div></div>'
+        +'</div>'
+        +'<p class="histoire-text">'+d.texte+'</p>'
+        +'</div>';
+    }).join('');
+}
+
+// ===================== QUIZ =====================
+function renderQuiz(){
+  const cont=document.getElementById('quizContainer');
+  if(quizIdx>=QUIZ.length){
+    cont.innerHTML='<div class="quiz-score-bar"><div class="quiz-score-num">'+quizScore+'/'+QUIZ.length+'</div>'
+    +'<div class="quiz-score-label">'+(lang==='fr'?'Score final · Félicitations !':'Final score · Congratulations!')+'</div></div>'
+    +'<button class="quiz-reset" onclick="resetQuiz()">'+(lang==='fr'?'🔄 Recommencer':'🔄 Play again')+'</button>';
+    return;
+  }
+  const q=QUIZ[quizIdx];
+  cont.innerHTML='<div class="quiz-score-bar"><div class="quiz-score-num">'+(quizIdx+1)+'/'+QUIZ.length+'</div>'
+    +'<div class="quiz-score-label">'+(lang==='fr'?'Question · Score : '+quizScore:'Question · Score: '+quizScore)+'</div></div>'
+    +'<div class="quiz-question"><div class="quiz-q-text">'+q.q[lang]+'</div>'
+    +'<div class="quiz-answers">'+q.a[lang].map(function(a,i){return '<button class="quiz-answer" onclick="answerQuiz('+i+',this)">'+a+'</button>';}).join('')+'</div>'
+    +'<button class="quiz-next" id="quizNext" onclick="nextQuestion()">'+(lang==='fr'?'Question suivante ➔':'Next question ➔')+'</button></div>';
+}
+function answerQuiz(idx,el){
+  if(quizAnswered) return;
+  quizAnswered=true;
+  const q=QUIZ[quizIdx];
+  document.querySelectorAll('.quiz-answer').forEach(function(b,i){
+    b.classList.add('revealed');
+    if(i===q.c) b.classList.add('correct');
+    else if(i===idx) b.classList.add('wrong');
+  });
+  if(idx===q.c) quizScore++;
+  document.getElementById('quizNext').style.display='block';
+}
+function nextQuestion(){quizIdx++;quizAnswered=false;renderQuiz();}
+function resetQuiz(){quizIdx=0;quizScore=0;quizAnswered=false;renderQuiz();}
+
+// ===================== APPS =====================
+function renderApps(){
+  document.getElementById('appsList').innerHTML=
+    '<div class="apps-section-title">🧂 Sels du Monde</div>'
+    +'<div style="padding:10px 16px 14px;font-size:13px;color:var(--muted);font-style:italic">'
+    +(lang==='fr'?'Découvrez les autres applications de Michel Garlandat :':'Discover other apps by Michel Garlandat:')
+    +'</div><div class="apps-grid">'
+    +MES_APPS.map(function(a){
+      return '<div class="app-item" onclick="openApp(\''+a.id+'\')"><div class="app-icon" id="appicon-'+a.id+'"><span>'+a.e+'</span></div><div class="app-name">'+a.n+'</div></div>';
+    }).join('')+'</div>';
+  MES_APPS.forEach(function(a){
+    const cb='itcb'+a.id;
+    window[cb]=function(d){
+      const w=document.getElementById('appicon-'+a.id);
+      if(!w) return;
+      const img=document.createElement('img');
+      img.src=d.results[0].artworkUrl60;
+      w.innerHTML='';w.appendChild(img);
+    };
+    const s=document.createElement('script');
+    s.src='https://itunes.apple.com/lookup?id='+a.id+'&callback='+cb;
+    document.body.appendChild(s);
+  });
+}
+function openApp(id){window.open('https://apps.apple.com/app/id'+id,'_system');}
+
+// ===================== INIT =====================
+window.openDetail=openDetail;
+buildChips();
+filterCards();
+</script>
+</body>
+</html>
